@@ -1,0 +1,24 @@
+name: Build
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Install Dalamud API 15
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'Dalamud.zip'
+          $install = Join-Path $env:RUNNER_TEMP 'Dalamud'
+          Invoke-WebRequest 'https://raw.githubusercontent.com/goatcorp/dalamud-distrib/a44d77c7f7927aec7f706df3ab3cb6d4f45f2a59/stg/latest.zip' -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $install
+          "DALAMUD_HOME=$install" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+      - run: dotnet build GearSetsCompanion.csproj -c Release
+      - run: python scripts/package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GearSetsCompanion
+          path: bin/Release/GearSetsCompanion.zip
