@@ -1,3 +1,7 @@
+## 0.1.0.1
+
+- Improve disable/update cleanup: stop callbacks first, attempt remaining cleanup after an error, ignore repeated shutdown calls and clear the cached plan.
+
 # Changelog
 
 ## 0.1.0.0

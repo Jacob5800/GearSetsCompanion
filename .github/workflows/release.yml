@@ -1,0 +1,44 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Install Dalamud API 15
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'Dalamud.zip'
+          $install = Join-Path $env:RUNNER_TEMP 'Dalamud'
+          Invoke-WebRequest 'https://raw.githubusercontent.com/goatcorp/dalamud-distrib/a44d77c7f7927aec7f706df3ab3cb6d4f45f2a59/stg/latest.zip' -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $install
+          "DALAMUD_HOME=$install" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+      - run: dotnet build GearSetsCompanion.csproj -c Release
+      - run: python scripts/package.py
+      - name: Publish release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: CHANGELOG.md
+          files: bin/Release/GearSetsCompanion.zip
+      - name: Publish feed
+        shell: pwsh
+        run: |
+          Copy-Item repo.json (Join-Path $env:RUNNER_TEMP 'feed.json')
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git switch --force-create feed-update --track origin/main
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'feed.json') repo.json -Force
+          git add repo.json
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "Update companion feed for $env:GITHUB_REF_NAME"
+            git push origin HEAD:main
+          }

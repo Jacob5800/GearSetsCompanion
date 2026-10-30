@@ -18,16 +18,18 @@ namespace GearSetsCompanion;
 public sealed record Plan(int schemaVersion,string character,bool highlight,uint[] itemIds);
 public sealed unsafe class Plugin : IDalamudPlugin {
  readonly IDalamudPluginInterface pi; readonly IFramework framework; readonly IPlayerState player; readonly IDataManager data; readonly IGameGui gui; readonly ICommandManager commands;
+ readonly ShutdownSequence shutdown=new(); volatile bool disposed; readonly IPluginLog log;
  readonly Config config; Plan? plan; DateTime next; bool open; string status="Waiting for the Minion plan."; string lastArmoire="";
  readonly HashSet<uint> ids=[];
- public Plugin(IDalamudPluginInterface pi,IFramework framework,IPlayerState player,IDataManager data,IGameGui gui,ICommandManager commands){
- this.pi=pi;this.framework=framework;this.player=player;this.data=data;this.gui=gui;this.commands=commands;
+ public Plugin(IDalamudPluginInterface pi,IFramework framework,IPlayerState player,IDataManager data,IGameGui gui,ICommandManager commands,IPluginLog log){
+ this.log=log;this.pi=pi;this.framework=framework;this.player=player;this.data=data;this.gui=gui;this.commands=commands;
  config=pi.GetPluginConfig() as Config ?? new();framework.Update+=Update;pi.UiBuilder.Draw+=Draw;pi.UiBuilder.OpenConfigUi+=Open;
  commands.AddHandler("/gearsets",new CommandInfo((_,_)=>Open()){HelpMessage="Open Gear Sets Companion settings."});
  }
- void Open()=>open=true;
+ void Open(){if(!disposed)open=true;}
  string Identity=>player.CharacterName+"@"+player.HomeWorld.RowId;
  void Update(IFramework _){
+ if(disposed)return;
  if(DateTime.UtcNow<next)return;next=DateTime.UtcNow.AddSeconds(1);
  ids.Clear();if(!player.IsLoaded){plan=null;lastArmoire="";return;}
  try{
@@ -43,6 +45,7 @@ public sealed unsafe class Plugin : IDalamudPlugin {
  }catch(Exception e){status=e.Message;plan=null;ids.Clear();}
  }
  void Draw(){
+ if(disposed)return;
  if(open){ImGui.SetNextWindowSize(new(580,220),ImGuiCond.FirstUseEver);if(ImGui.Begin("Gear Sets Companion",ref open)){
  var enabled=config.Enabled;if(ImGui.Checkbox("Enable planned-item highlights",ref enabled)){config.Enabled=enabled;pi.SavePluginConfig(config);}
  ImGui.TextWrapped("Green outlines identify items used by your selected Minion plans. Enable the matching toggle in Plan too.");
@@ -70,5 +73,11 @@ public sealed unsafe class Plugin : IDalamudPlugin {
  float x=0,y=0;slot->AtkDragDropInterface.GetScreenPosition(&x,&y);var size=36*scale;
  var a=new Vector2(x,y)+ImGui.GetMainViewport().Pos;ImGui.GetForegroundDrawList().AddRect(a,a+new Vector2(size),0xFF40FF40,4,ImDrawFlags.None,2);
  }
- public void Dispose(){framework.Update-=Update;pi.UiBuilder.Draw-=Draw;pi.UiBuilder.OpenConfigUi-=Open;commands.RemoveHandler("/gearsets");}
+ public void Dispose(){
+ disposed=true;
+ var failures=shutdown.Run(("Framework",()=>framework.Update-=Update),("Draw",()=>pi.UiBuilder.Draw-=Draw),
+ ("Config UI",()=>pi.UiBuilder.OpenConfigUi-=Open),("Command",()=>commands.RemoveHandler("/gearsets")),
+ ("Cached plan",()=>{plan=null;ids.Clear();}));
+ foreach(var (step,error) in failures)log.Error(error,"Shutdown cleanup failed: {Step}; remaining cleanup attempted.",step);
+ }
 }
