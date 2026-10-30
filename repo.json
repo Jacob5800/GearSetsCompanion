@@ -3,7 +3,7 @@
     "Author": "Jacob5800",
     "Name": "Gear Sets Companion (Beta)",
     "InternalName": "GearSetsCompanion",
-    "AssemblyVersion": "0.1.0.0",
+    "AssemblyVersion": "0.1.0.1",
     "Description": "Local companion for Jacob's Gear Sets. Beta: in-game verification is pending.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/Jacob5800/GearSetsCompanion",
@@ -13,11 +13,11 @@
     "CanUnloadAsync": false,
     "LoadPriority": 0,
     "Punchline": "Armoire ownership and planned gear highlights.",
-    "Changelog": "Initial beta: armoire ownership bridge for Jacob's Gear Sets, saved highlighting toggles, and planned-item outlines in supported inventory and saddlebag layouts. Additional container overlays and in-game verification remain pending.",
+    "Changelog": "## 0.1.0.1\n\n- Improve disable/update cleanup: stop callbacks first, attempt remaining cleanup after an error, ignore repeated shutdown calls and clear the cached plan.\n",
     "AcceptsFeedback": true,
-    "LastUpdate": 1793209070,
-    "DownloadLinkInstall": "https://github.com/Jacob5800/GearSetsCompanion/releases/download/v0.1.0.0/GearSetsCompanion.zip",
-    "DownloadLinkUpdate": "https://github.com/Jacob5800/GearSetsCompanion/releases/download/v0.1.0.0/GearSetsCompanion.zip",
-    "DownloadLinkTesting": "https://github.com/Jacob5800/GearSetsCompanion/releases/download/v0.1.0.0/GearSetsCompanion.zip"
+    "LastUpdate": 1793394228,
+    "DownloadLinkInstall": "https://github.com/Jacob5800/GearSetsCompanion/releases/download/v0.1.0.1/GearSetsCompanion.zip",
+    "DownloadLinkUpdate": "https://github.com/Jacob5800/GearSetsCompanion/releases/download/v0.1.0.1/GearSetsCompanion.zip",
+    "DownloadLinkTesting": "https://github.com/Jacob5800/GearSetsCompanion/releases/download/v0.1.0.1/GearSetsCompanion.zip"
   }
 ]
